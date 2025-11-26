@@ -25,18 +25,20 @@ let ip =
 
 ip = ip.replace("::ffff:", "");
 
-let geo = null;
+console.log("User IP",ip);
 
-try {
-  const res = await axios.get(`https://ip-api.com/json/${ip}`);
-  geo = res.data;
-  console.log("User IP:", ip);
-  console.log("User Geo:", geo);
-} catch (err) {
-  console.log("User IP:", ip);
-  console.log("Geo lookup failed:", err.message);
-}
-//''''''''''''''''''''''''''
+// let geo = null;
+
+// try {
+//   const res = await axios.get(`https://ip-api.com/json/${ip}`);
+//   geo = res.data;
+//   console.log("User IP:", ip);
+//   console.log("User Geo:", geo);
+// } catch (err) {
+//   console.log("User IP:", ip);
+//   console.log("Geo lookup failed:", err.message);
+// }
+// //''''''''''''''''''''''''''
 
 
   socket.on('joinRoom', ({ roomId }) => {
@@ -111,16 +113,46 @@ try {
     }
   });
 
-  socket.on('disconnect', () => {
-    for (const roomId in rooms) {
-      const room = rooms[roomId];
-      if (room.players[socket.id]) {
-        delete room.players[socket.id];
-        socket.to(roomId).emit('playerLeft');
+    socket.on('disconnect', () => {
+  for (const roomId in rooms) {
+    const room = rooms[roomId];
+    if (room.players[socket.id]) {
+      // Remove the disconnecting player
+      delete room.players[socket.id];
+
+      const remainingPlayers = Object.keys(room.players);
+
+      if (remainingPlayers.length === 1) {
+        // Only one player left, reset board and make them 'X'
+        const remainingSocketId = remainingPlayers[0];
+        room.board = Array.from({ length: 3 }, () => Array(3).fill(''));
+        room.turn = 'X';
+        room.nextStarter = 'O'; // the next new player will be 'O'
+        room.players[remainingSocketId].symbol = 'X';
+
+        // Notify remaining player
+        io.to(remainingSocketId).emit('playerAssigned', 'X');
+        io.to(roomId).emit('updateBoard', { board: room.board, turn: room.turn });
+        io.to(roomId).emit('playerLeft');
+      } else if (remainingPlayers.length === 0) {
+        // No players left, delete room
+        delete rooms[roomId];
+        //console.log(`Room ${roomId} deleted because all players left`);
       }
-      if (Object.keys(room.players).length === 0) delete rooms[roomId];
     }
-  });
+  }
+});
+
+  // socket.on('disconnect', () => {
+  //   for (const roomId in rooms) {
+  //     const room = rooms[roomId];
+  //     if (room.players[socket.id]) {
+  //       delete room.players[socket.id];
+  //       socket.to(roomId).emit('playerLeft');
+  //     }
+  //     if (Object.keys(room.players).length === 0) delete rooms[roomId];
+  //   }
+  // });
 });
 
 function checkWinner(board) {
