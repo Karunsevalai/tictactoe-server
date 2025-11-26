@@ -16,18 +16,27 @@ const rooms = {}; // roomId -> { players: {socketId: {symbol}}, board, turn, nex
 
 io.on('connection',async (socket) => {
   console.log('New connection:', socket.id);
+  //......................
 
-  let ip = socket.handshake.address?.replace("::ffff:", "") || "0.0.0.0";
-  let geo = null;
+let ip =
+  socket.handshake.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+  socket.handshake.address ||
+  "0.0.0.0";
 
-  try {
-    const res = await axios.get(`http://ip-api.com/json/${ip}`);
-    geo = res.data;  // city, country, lat, lon, isp...
-    console.log("User IP:", ip);
-    console.log("User Geo:", geo);
-  } catch (err) {
-    console.log("Geo lookup failed");
-  }
+ip = ip.replace("::ffff:", "");
+
+let geo = null;
+
+try {
+  const res = await axios.get(`https://ip-api.com/json/${ip}`);
+  geo = res.data;
+  console.log("User IP:", ip);
+  console.log("User Geo:", geo);
+} catch (err) {
+  console.log("User IP:", ip);
+  console.log("Geo lookup failed:", err.message);
+}
+//''''''''''''''''''''''''''
 
 
   socket.on('joinRoom', ({ roomId }) => {
