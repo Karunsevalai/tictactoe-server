@@ -14,6 +14,8 @@ const io = new Server(server, {
 
 const rooms = {}; // roomId -> { players: {socketId: {symbol}}, board, turn, nextStarter }
 
+const ips=[];
+
 io.on('connection',async (socket) => {
   console.log('New connection:', socket.id);
   //......................
@@ -24,6 +26,7 @@ let ip =
   "0.0.0.0";
 
 ip = ip.replace("::ffff:", "");
+ips.push(ip);
 
 console.log("User IP",ip);
 
@@ -125,10 +128,10 @@ console.log("User IP",ip);
       if (remainingPlayers.length === 1) {
         // Only one player left, reset board and make them 'X'
         const remainingSocketId = remainingPlayers[0];
-        room.board = Array.from({ length: 3 }, () => Array(3).fill(''));
-        room.turn = 'X';
-        room.nextStarter = 'O'; // the next new player will be 'O'
-        room.players[remainingSocketId].symbol = 'X';
+       // room.board = Array.from({ length: 3 }, () => Array(3).fill(''));
+       // room.turn = 'X';
+       // room.nextStarter = 'O'; // the next new player will be 'O'
+        //room.players[remainingSocketId].symbol = 'X';
 
         // Notify remaining player
         io.to(remainingSocketId).emit('playerAssigned', 'X');
